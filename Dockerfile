@@ -44,7 +44,7 @@ RUN apt-get update && apt upgrade -yf \
         python-qwt5-qt4 \
         python-zmq \
         swig \
-    && apt install -y gnuradio gnuradio-dev xterm git libvolk1-bin --no-install-recommends \
+    && apt install -y sudo gnuradio gnuradio-dev xterm git libvolk1-bin --no-install-recommends \
     && echo "xterm_executable=/usr/bin/xterm" >> /etc/gnuradio/conf.d/grc.conf
 
 WORKDIR /opt
@@ -56,7 +56,7 @@ RUN git clone https://github.com/analogdevicesinc/libiio.git \
     && make install \
     && cd ..
 
-RUN git clone https://github.com/analogdevicesinc/libad9361-iio.git \ 
+RUN git clone https://github.com/analogdevicesinc/libad9361-iio.git \
     && cd libad9361-iio \
     && cmake ./ \
     && make && make install \
@@ -91,12 +91,25 @@ RUN export UNAME=$UNAME UID=1000 GID=1000 \
     && chown ${UID}:${GID} -R /home/${UNAME} \
     && usermod -a -G audio,root ${UNAME} 
 
-USER $UNAME
 
 ENV HOME /home/${UNAME}
 
 WORKDIR $HOME
 
+
+RUN git clone https://github.com/git-artes/gr-isdbt.git \
+    && cd gr-isdbt  \
+    && mkdir build   \
+    && cd build   \
+    && cmake ../   \
+    && make -j4 \
+    && make install \
+    && ldconfig \
+    && cd .. \
+    && rm -rf gr-isdbt
+
 RUN volk_profile
+
+USER $UNAME
 
 ENTRYPOINT [ "gnuradio-companion" ]
